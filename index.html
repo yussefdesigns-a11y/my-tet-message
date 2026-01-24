@@ -4,91 +4,690 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TextGuard - نظام تحليل المحتوى</title>
+    <title>TextGuard - نظام تحليل وتحويل المحتوى</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#097c7c",
-                        "primary-dark": "#065f5f",
-                        "primary-light": "#e7f3f3",
-                        "background-light": "#f9fafb",
-                    },
-                    fontFamily: { "display": ["Manrope", "sans-serif"] },
-                    boxShadow: { "soft": "0 4px 20px rgba(0,0,0,0.03)", "glow": "0 0 15px rgba(9, 124, 124, 0.2)" }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { font-family: 'Manrope', sans-serif; overflow-x: hidden; }
-        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
-        .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
-        
-        #protocol-warning {
-            display: none; position: fixed; inset: 0; background: #fff; z-index: 10000;
-            flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem;
-        }
-        
-        #server-warning {
-            display: flex; position: fixed; inset: 0; background: #fff; z-index: 9999;
-            align-items: center; justify-content: center; text-align: center; padding: 2rem;
-            transition: opacity 0.5s ease-out;
-        }
-        body.app-loaded #server-warning { opacity: 0; pointer-events: none; }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet">
+    
     <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "react/": "https://esm.sh/react@19.0.0/",
     "@google/genai": "https://esm.sh/@google/genai@1.37.0",
-    "pdfjs-dist": "https://esm.sh/pdfjs-dist@4.0.379",
-    "mammoth": "https://esm.sh/mammoth@1.8.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react": "https://esm.sh/react@^19.2.3",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "mammoth": "https://esm.sh/mammoth@^1.11.0",
+    "pdfjs-dist": "https://esm.sh/pdfjs-dist@^5.4.530"
   }
 }
 </script>
-</head>
-<body class="bg-background-light text-slate-900 min-h-screen">
-    <!-- تنبيه بروتوكول file:// -->
-    <div id="protocol-warning">
-        <div class="max-w-md">
-            <span class="material-symbols-outlined text-red-500 text-6xl mb-4">warning</span>
-            <h2 class="text-xl font-bold mb-2">تنبيه: لا يمكن تشغيل التطبيق مباشرة</h2>
-            <p class="text-slate-600 mb-4">بسبب قيود المتصفح، يجب تشغيل هذا الملف باستخدام خادم محلي (Local Server) وليس عن طريق النقر المزدوج على الملف.</p>
-            <code class="bg-slate-100 p-2 rounded text-sm block mb-4 text-left">npx serve .</code>
-        </div>
-    </div>
 
-    <!-- شاشة التحميل -->
-    <div id="server-warning">
-        <div class="max-w-md">
-            <div class="text-[#097c7c] mb-4"><span class="material-symbols-outlined text-6xl animate-pulse">shield_person</span></div>
-            <h1 class="text-2xl font-bold mb-2 tracking-tight">جاري تهيئة النظام...</h1>
-            <p class="text-slate-500 mb-6 text-sm">يتم الآن مزامنة البروتوكولات اللغوية وأدوات التشخيص.</p>
-        </div>
-    </div>
-
-    <div id="root"></div>
-
-    <script>
-        // فحص ما إذا كان المتصفح يستخدم بروتوكول file://
-        if (window.location.protocol === 'file:') {
-            document.getElementById('protocol-warning').style.display = 'flex';
+    <style>
+        body { 
+            font-family: 'Manrope', sans-serif; 
+            background-color: #f9fafb; 
+            scroll-behavior: smooth; 
+            overflow-x: hidden;
         }
+        .material-symbols-outlined { 
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; 
+        }
+        .glass { 
+            background: rgba(255, 255, 255, 0.8); 
+            backdrop-filter: blur(10px); 
+        }
+        .shadow-soft { 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03); 
+        }
+        .shadow-glow { 
+            box-shadow: 0 0 20px rgba(9, 124, 124, 0.15); 
+        }
+        .custom-scroll::-webkit-scrollbar { 
+            width: 5px; 
+        }
+        .custom-scroll::-webkit-scrollbar-thumb { 
+            background: #cbd5e1; 
+            border-radius: 10px; 
+        }
+        
+        #app-loading-screen { 
+            display: flex; 
+            position: fixed; 
+            inset: 0; 
+            background: #fff; 
+            z-index: 9999; 
+            align-items: center; 
+            justify-content: center; 
+            transition: opacity 0.5s; 
+        }
+        body.loaded #app-loading-screen { 
+            opacity: 0; 
+            pointer-events: none; 
+        }
+        
+        .view { display: none; opacity: 0; transform: translateY(10px); transition: all 0.3s ease-out; }
+        .view.active { display: block; opacity: 1; transform: translateY(0); }
+        
+        .gauge-svg { transform: rotate(-90deg); }
+        .gauge-path { transition: stroke-dashoffset 1s ease-out; }
+
+        .btn-primary {
+            background-color: #097c7c;
+            color: white;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #075e5e;
+        }
+        .text-primary { color: #097c7c; }
+    </style>
+</head>
+<body class="text-slate-900 min-h-screen">
+
+    <!-- Loading Screen -->
+    <div id="app-loading-screen">
+        <div class="text-center">
+            <div class="text-primary mb-4 animate-pulse">
+                <span class="material-symbols-outlined text-6xl">shield_person</span>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight">جاري تهيئة النظام...</h1>
+            <p class="text-slate-500 text-sm mt-2">تأمين الاتصال بالبروتوكولات الذكية</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 glass border-b border-slate-100 px-6 py-3">
+        <div class="max-w-[1440px] mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="showView('analyze')">
+                <div class="bg-primary p-2 rounded-lg text-white">
+                    <span class="material-symbols-outlined block">analytics</span>
+                </div>
+                <h2 class="text-lg font-bold tracking-tight text-slate-900">TextGuard</h2>
+            </div>
+            
+            <div class="flex items-center gap-6">
+                <nav class="flex items-center gap-8">
+                    <button onclick="showView('analyze')" class="text-sm font-medium text-slate-500 hover:text-primary transition-colors">الرئيسية</button>
+                    <button onclick="showView('history')" class="text-sm font-medium text-slate-500 hover:text-primary transition-colors">السجل</button>
+                </nav>
+                <div class="h-6 w-px bg-slate-200 hidden md:block"></div>
+                
+                <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-200 bg-slate-50">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Master Node</span>
+                    <div class="size-2 rounded-full bg-green-500"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8">
+        
+        <!-- View: Analyze -->
+        <div id="view-analyze" class="view active space-y-6">
+            
+            <!-- Protocol Mission Banner -->
+            <div id="mission-container">
+                <!-- Injected via JS -->
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Input Section -->
+                <div class="lg:col-span-8 flex flex-col gap-4">
+                    <div class="flex justify-between items-end px-1">
+                        <div>
+                            <h1 class="text-2xl font-black tracking-tight text-slate-900">Protocol Input</h1>
+                            <p class="text-slate-500 text-sm mt-1">أدخل النص المراد تحليله لبدء العملية.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-soft border border-slate-100 flex flex-col min-h-[450px] overflow-hidden transition-all hover:shadow-lg">
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-slate-50 bg-slate-50/30">
+                            <div class="flex gap-1">
+                                <button onclick="clearInput()" class="p-2 text-slate-400 hover:text-red-500 rounded-lg transition-colors" title="Clear Text">
+                                    <span class="material-symbols-outlined text-[20px]">delete</span>
+                                </button>
+                                <button onclick="copyInput()" class="p-2 text-slate-400 hover:text-primary rounded-lg transition-colors" title="Copy Text">
+                                    <span class="material-symbols-outlined text-[20px]">content_copy</span>
+                                </button>
+                            </div>
+                            <div class="text-xs font-medium text-slate-400 uppercase tracking-wider" id="buffer-status">
+                                Awaiting Data Packet
+                            </div>
+                        </div>
+
+                        <textarea id="text-input" 
+                            class="flex-1 w-full border-none p-8 text-lg leading-relaxed text-slate-800 placeholder:text-slate-300 focus:ring-0 bg-transparent resize-none"
+                            placeholder="ابدأ بكتابة النص هنا أو الصق المحتوى..."></textarea>
+
+                        <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+                            <div class="flex gap-4 text-xs font-medium text-slate-400" id="stats-display">
+                                <span>0 كلمة</span>
+                                <span>0 حرف</span>
+                            </div>
+                            <button id="btn-analyze" onclick="handleAnalyze()" class="btn-primary px-8 py-3 rounded-xl font-bold flex items-center gap-2 shadow-glow active:scale-95">
+                                <span class="material-symbols-outlined text-[20px]">search_check</span>
+                                بدء التحليل
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diagnostics Sidebar -->
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                    <h2 class="text-xl font-bold tracking-tight text-slate-900 pt-1">Diagnostics</h2>
+                    <div class="bg-white rounded-2xl shadow-soft border border-slate-100 p-8 flex flex-col gap-8 h-full">
+                        
+                        <div id="diagnostics-empty" class="h-full flex flex-col items-center justify-center text-center p-4">
+                            <div class="bg-slate-50 p-6 rounded-full mb-4">
+                                <span class="material-symbols-outlined text-slate-300 text-6xl">analytics</span>
+                            </div>
+                            <p class="text-slate-400 font-medium italic">قم بتشغيل بروتوكول التحليل للحصول على النتائج.</p>
+                        </div>
+
+                        <div id="diagnostics-content" class="hidden space-y-8">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="relative size-48">
+                                    <svg class="gauge-svg size-full" viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f1f5f9" stroke-width="8"></circle>
+                                        <circle id="gauge-progress" cx="50" cy="50" r="40" fill="transparent" stroke="#097c7c" stroke-width="8" stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" class="gauge-path"></circle>
+                                    </svg>
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span id="gauge-value" class="text-5xl font-black text-slate-900 tracking-tighter">--</span>
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">بشري</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="verdict-container" class="border rounded-xl p-4 flex gap-3 items-start">
+                                <div id="verdict-icon-box" class="p-1.5 rounded-md shrink-0">
+                                    <span id="verdict-icon" class="material-symbols-outlined text-[20px]"></span>
+                                </div>
+                                <div class="min-w-0">
+                                    <h3 id="verdict-title" class="text-sm font-bold"></h3>
+                                    <p id="verdict-desc" class="text-xs mt-1 leading-relaxed opacity-80"></p>
+                                </div>
+                            </div>
+
+                            <button onclick="handleHumanize()" class="w-full btn-primary p-4 rounded-xl shadow-glow hover:shadow-lg transition-all group relative overflow-hidden shrink-0">
+                                <div class="flex items-center justify-center gap-2 relative z-10">
+                                    <span class="material-symbols-outlined">auto_fix_high</span>
+                                    <span class="font-bold text-lg">Humanize Now</span>
+                                </div>
+                            </button>
+
+                            <div class="w-full h-px bg-slate-100"></div>
+
+                            <div class="space-y-6">
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Linguistic Complexity</h4>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Vocabulary</p>
+                                            <p id="stat-vocab" class="text-lg font-black text-slate-800">--</p>
+                                        </div>
+                                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                                            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Structures</p>
+                                            <p id="stat-struct" class="text-lg font-black text-slate-800">--</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Results -->
+        <div id="view-results" class="view space-y-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <button onclick="showView('analyze')" class="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition-colors">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                    </button>
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500">Draft Analysis</span>
+                        </div>
+                        <h2 class="text-2xl font-black tracking-tight text-slate-900">Analysis Comparison</h2>
+                    </div>
+                </div>
+
+                <div class="bg-slate-100 p-1 rounded-lg flex items-center">
+                    <button class="px-6 py-1.5 rounded-md bg-white shadow-sm text-sm font-bold text-primary">Professional</button>
+                    <button class="px-6 py-1.5 rounded-md text-sm font-medium text-slate-500">Casual</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 min-h-[600px]">
+                <div class="xl:col-span-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Original View -->
+                    <div class="flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden h-full">
+                        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-slate-400 text-lg">smart_toy</span>
+                                <span class="text-sm font-semibold text-slate-700">Analysis Highlights</span>
+                            </div>
+                        </div>
+                        <div id="display-original" class="p-8 text-base leading-relaxed text-slate-600 overflow-y-auto custom-scroll flex-1 bg-white">
+                        </div>
+                    </div>
+
+                    <!-- Humanized View -->
+                    <div class="flex flex-col bg-white rounded-2xl border border-primary/30 shadow-xl shadow-primary/5 overflow-hidden relative h-full">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-primary"></div>
+                        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-lg">face</span>
+                                <span class="text-sm font-bold text-slate-900">Humanized Output</span>
+                            </div>
+                        </div>
+                        
+                        <div id="humanizing-overlay" class="hidden absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-8 text-center">
+                            <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
+                            <p class="font-bold text-slate-700">Applying Humanization Protocol...</p>
+                        </div>
+                        
+                        <div class="flex-1 flex flex-col relative min-h-0">
+                            <textarea id="display-humanized" 
+                                class="flex-1 w-full p-8 text-base leading-relaxed text-slate-800 bg-transparent border-0 focus:ring-0 resize-none custom-scroll font-medium"
+                                spellCheck="false" readonly></textarea>
+
+                            <div class="absolute bottom-6 right-6">
+                                <button onclick="copyHumanized()" class="btn-primary px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 font-bold text-sm">
+                                    <span class="material-symbols-outlined text-lg">content_copy</span>
+                                    Copy Text
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Summary -->
+                <aside class="xl:col-span-4 flex flex-col gap-6">
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Humanization Score</h3>
+                        <div class="flex items-center gap-6">
+                            <div class="relative size-24 shrink-0">
+                                <svg class="size-full rotate-[-90deg]" viewBox="0 0 36 36">
+                                    <path class="text-slate-100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3.5"></path>
+                                    <path id="human-score-path" class="text-primary transition-all duration-1000" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="0, 100" stroke-linecap="round" stroke-width="3.5"></path>
+                                </svg>
+                                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                    <span id="human-score-val" class="text-3xl font-black text-slate-900">--</span>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-lg font-bold text-slate-900">Peak Performance</p>
+                                <p class="text-sm text-slate-500">تم تحسين النص ليتجاوز معظم أنظمة الكشف.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex-1">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Improvements</h3>
+                        <div id="improvements-list" class="space-y-4">
+                            <!-- Injected -->
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        <!-- View: History -->
+        <div id="view-history" class="view space-y-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight text-slate-900">Your Activity</h1>
+                    <p class="text-slate-500 text-sm mt-1">سجل العمليات السابقة والتحليلات المحفوظة.</p>
+                </div>
+                <button onclick="clearHistory()" class="text-red-500 text-sm font-bold hover:bg-red-50 px-4 py-2 rounded-lg transition-colors">مسح السجل</button>
+            </div>
+
+            <div id="history-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Injected via JS -->
+            </div>
+            
+            <div id="history-empty" class="hidden h-96 flex flex-col items-center justify-center text-center p-12 bg-white rounded-2xl border border-dashed border-slate-200">
+                <div class="bg-slate-50 p-6 rounded-full mb-4">
+                    <span class="material-symbols-outlined text-slate-300 text-6xl">history</span>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800">No records found</h3>
+                <button onclick="showView('analyze')" class="mt-6 btn-primary px-6 py-2 rounded-lg font-bold">بدء التحليل الأول</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- App Logic -->
+    <script type="module">
+        import { GoogleGenAI, Type } from "@google/genai";
+
+        // Constants
+        const GAUGE_CIRCUMFERENCE = 2 * Math.PI * 40;
+        const INITIAL_PROTOCOLS = [
+            { id: 'first_contact', title: 'First Contact', desc: 'قم بأول عملية تحليل نصي لتفعيل البروتوكول.', icon: 'radar', hint: 'قم بتحليل أي نص' },
+            { id: 'ghost_in_machine', title: 'Ghost in the Machine', desc: 'حوّل نصاً آلياً إلى نص بشري عالي الجودة.', icon: 'auto_fix_high', hint: 'استخدم الأنسنة' }
+        ];
+
+        // State
+        let state = {
+            currentView: 'analyze',
+            inputText: '',
+            analysisResult: null,
+            humanizedResult: null,
+            history: JSON.parse(localStorage.getItem('textguard_history') || '[]'),
+            protocols: JSON.parse(localStorage.getItem('textguard_protocols') || '[]')
+        };
+
+        if (state.protocols.length === 0) state.protocols = INITIAL_PROTOCOLS;
+
+        // Core Functions
+        window.showView = (viewName) => {
+            state.currentView = viewName;
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            
+            if (viewName === 'history') renderHistory();
+            if (viewName === 'analyze') renderMissions();
+            window.scrollTo(0, 0);
+        };
+
+        window.clearInput = () => {
+            document.getElementById('text-input').value = '';
+            updateStats();
+        };
+
+        window.copyInput = () => {
+            const text = document.getElementById('text-input').value;
+            if (text) {
+                navigator.clipboard.writeText(text);
+                alert('تم النسخ!');
+            }
+        };
+
+        window.copyHumanized = () => {
+            const text = document.getElementById('display-humanized').value;
+            if (text) {
+                navigator.clipboard.writeText(text);
+                alert('تم نسخ النص المؤنسن!');
+            }
+        };
+
+        const updateStats = () => {
+            const text = document.getElementById('text-input').value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const chars = text.length;
+            document.getElementById('stats-display').innerHTML = `<span>${words} كلمة</span><span>${chars} حرف</span>`;
+            document.getElementById('buffer-status').innerText = text ? 'Buffer Loaded' : 'Awaiting Data Packet';
+        };
+
+        document.getElementById('text-input').addEventListener('input', updateStats);
+
+        const setGauge = (percent) => {
+            const offset = GAUGE_CIRCUMFERENCE - (percent / 100) * GAUGE_CIRCUMFERENCE;
+            document.getElementById('gauge-progress').style.strokeDashoffset = offset;
+            document.getElementById('gauge-value').innerText = `${percent}%`;
+        };
+
+        // Gemini Service
+        window.handleAnalyze = async () => {
+            const text = document.getElementById('text-input').value.trim();
+            if (!text || text.length < 10) return alert('يرجى إدخال نص كافٍ للتحليل.');
+
+            const btn = document.getElementById('btn-analyze');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="animate-spin material-symbols-outlined">progress_activity</span> جاري التحليل...';
+
+            try {
+                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                const response = await ai.models.generateContent({
+                    model: 'gemini-3-flash-preview',
+                    contents: `Deeply analyze this text for AI vs Human patterns. Return JSON:
+                    {
+                        "humanPercentage": number,
+                        "verdict": string,
+                        "verdictDescription": string,
+                        "vocabularyRichness": number,
+                        "structuralVariety": number,
+                        "sentences": [{"text": string, "aiLikelihood": number, "reason": string}]
+                    }
+                    Text: "${text}"`,
+                    config: { responseMimeType: "application/json" }
+                });
+
+                const result = JSON.parse(response.text);
+                state.analysisResult = result;
+                state.inputText = text;
+
+                // Update UI
+                document.getElementById('diagnostics-empty').classList.add('hidden');
+                document.getElementById('diagnostics-content').classList.remove('hidden');
+                setGauge(result.humanPercentage);
+                
+                const verdictBox = document.getElementById('verdict-container');
+                const verdictIconBox = document.getElementById('verdict-icon-box');
+                const isAI = result.humanPercentage < 50;
+
+                verdictBox.className = `border rounded-xl p-4 flex gap-3 items-start ${isAI ? 'bg-amber-50 border-amber-100' : 'bg-green-50 border-green-100'}`;
+                verdictIconBox.className = `p-1.5 rounded-md shrink-0 ${isAI ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`;
+                document.getElementById('verdict-icon').innerText = isAI ? 'warning' : 'check_circle';
+                document.getElementById('verdict-title').innerText = result.verdict;
+                document.getElementById('verdict-title').className = `text-sm font-bold ${isAI ? 'text-amber-900' : 'text-green-900'}`;
+                document.getElementById('verdict-desc').innerText = result.verdictDescription;
+                document.getElementById('verdict-desc').className = `text-xs mt-1 leading-relaxed ${isAI ? 'text-amber-700/80' : 'text-green-700/80'}`;
+
+                document.getElementById('stat-vocab').innerText = `${result.vocabularyRichness}%`;
+                document.getElementById('stat-struct').innerText = `${result.structuralVariety}%`;
+
+                // History and Missions
+                completeMission('first_contact');
+                saveToHistory();
+
+            } catch (err) {
+                console.error(err);
+                alert('فشل الاتصال بالذكاء الاصطناعي.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span class="material-symbols-outlined text-[20px]">search_check</span> بدء التحليل';
+            }
+        };
+
+        window.handleHumanize = async () => {
+            showView('results');
+            const overlay = document.getElementById('humanizing-overlay');
+            const displayOriginal = document.getElementById('display-original');
+            const displayHumanized = document.getElementById('display-humanized');
+            
+            overlay.classList.remove('hidden');
+            displayOriginal.innerHTML = '';
+            displayHumanized.value = '';
+
+            // Render highlighted original
+            state.analysisResult.sentences.forEach(s => {
+                const span = document.createElement('span');
+                span.innerText = s.text + ' ';
+                if (s.aiLikelihood > 40) span.className = 'bg-amber-50 border-b-2 border-amber-200 cursor-help';
+                span.title = s.reason;
+                displayOriginal.appendChild(span);
+            });
+
+            try {
+                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                const response = await ai.models.generateContent({
+                    model: 'gemini-3-flash-preview',
+                    contents: `Humanize this text to sound 100% human, professional, and natural. Return JSON:
+                    {
+                        "text": string,
+                        "humanizationScore": number,
+                        "improvements": [{"title": string, "desc": string, "icon": string}]
+                    }
+                    Original Text: "${state.inputText}"`,
+                    config: { responseMimeType: "application/json" }
+                });
+
+                const result = JSON.parse(response.text);
+                state.humanizedResult = result;
+
+                displayHumanized.value = result.text;
+                document.getElementById('human-score-val').innerText = `${result.humanizationScore}%`;
+                const offset = GAUGE_CIRCUMFERENCE - (result.humanizationScore / 100) * GAUGE_CIRCUMFERENCE;
+                document.getElementById('human-score-path').style.strokeDashoffset = offset;
+
+                renderImprovements(result.improvements);
+                completeMission('ghost_in_machine');
+
+            } catch (err) {
+                displayHumanized.value = "حدث خطأ أثناء المعالجة.";
+            } finally {
+                overlay.classList.add('hidden');
+            }
+        };
+
+        function renderImprovements(imps) {
+            const list = document.getElementById('improvements-list');
+            list.innerHTML = imps.map((imp, idx) => `
+                <div class="flex gap-3 items-start p-3 rounded-lg hover:bg-slate-50 transition-colors">
+                    <div class="mt-0.5 rounded-full p-1 shrink-0 bg-primary/10 text-primary">
+                        <span class="material-symbols-outlined text-sm block">${imp.icon || 'star'}</span>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800">${imp.title}</h4>
+                        <p class="text-xs text-slate-500 mt-0.5">${imp.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Mission System
+        function renderMissions() {
+            const container = document.getElementById('mission-container');
+            const current = state.protocols.find(p => !p.completed);
+            
+            if (!current) {
+                container.innerHTML = `
+                <div class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-5 shadow-lg border border-emerald-400/30 flex items-center justify-between group overflow-hidden relative">
+                    <div class="flex items-center gap-4 relative z-10">
+                        <div class="size-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30">
+                            <span class="material-symbols-outlined">done_all</span>
+                        </div>
+                        <div>
+                            <h3 class="text-white font-black text-lg leading-tight">Master Protocols Active</h3>
+                            <p class="text-emerald-50 text-xs font-medium opacity-80">تم إكمال كافة المهمات التعليمية بنجاح.</p>
+                        </div>
+                    </div>
+                </div>`;
+                return;
+            }
+
+            container.innerHTML = `
+            <div class="bg-white rounded-2xl p-5 shadow-soft border border-slate-100 flex items-center justify-between hover:shadow-md transition-all group border-l-4 border-l-amber-400">
+                <div class="flex items-center gap-4">
+                    <div class="size-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover:bg-amber-100 transition-colors">
+                        <span class="material-symbols-outlined text-3xl">${current.icon}</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-0.5">
+                            <span class="text-[10px] font-black text-amber-500 uppercase tracking-widest">المهمة الحالية</span>
+                            <div class="h-1 w-1 rounded-full bg-slate-300"></div>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Protocol</span>
+                        </div>
+                        <h3 class="text-slate-900 font-black text-lg leading-tight">${current.title}</h3>
+                        <p class="text-slate-500 text-xs mt-1 font-medium">${current.desc}</p>
+                    </div>
+                </div>
+                <div class="hidden sm:flex flex-col items-end gap-2 text-right">
+                    <p class="text-[10px] font-black text-amber-600 italic group-hover:translate-x-[-4px] transition-transform">
+                        ${current.hint} →
+                    </p>
+                </div>
+            </div>`;
+        }
+
+        function completeMission(id) {
+            state.protocols = state.protocols.map(p => p.id === id ? { ...p, completed: true } : p);
+            localStorage.setItem('textguard_protocols', JSON.stringify(state.protocols));
+            renderMissions();
+        }
+
+        // History Management
+        function saveToHistory() {
+            const record = {
+                id: Date.now(),
+                text: state.inputText,
+                score: state.analysisResult.humanPercentage,
+                date: new Date().toLocaleDateString('ar-EG'),
+                time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+            };
+            state.history.unshift(record);
+            if (state.history.length > 20) state.history.pop();
+            localStorage.setItem('textguard_history', JSON.stringify(state.history));
+        }
+
+        function renderHistory() {
+            const grid = document.getElementById('history-grid');
+            const empty = document.getElementById('history-empty');
+            
+            if (state.history.length === 0) {
+                grid.classList.add('hidden');
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            empty.classList.add('hidden');
+
+            grid.innerHTML = state.history.map(item => `
+                <div class="group relative bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer flex flex-col h-64 overflow-hidden" onclick="loadFromHistory(${item.id})">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${item.date}</span>
+                            <span class="text-xs font-bold text-slate-500">${item.time}</span>
+                        </div>
+                        <div class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary-light text-primary">
+                            ANALYSIS
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-600 line-clamp-4 flex-1 mb-4 italic leading-relaxed">
+                        "${item.text}"
+                    </p>
+                    <div class="flex items-center justify-between pt-4 border-t border-slate-50 mt-auto">
+                        <div class="flex items-center gap-2">
+                            <div class="size-8 rounded-lg bg-primary-light flex items-center justify-center text-primary font-bold text-xs">
+                                ${item.score}%
+                            </div>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Human Score</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.loadFromHistory = (id) => {
+            const record = state.history.find(h => h.id === id);
+            if (record) {
+                document.getElementById('text-input').value = record.text;
+                updateStats();
+                showView('analyze');
+                handleAnalyze(); // Auto re-analyze to populate UI
+            }
+        };
+
+        window.clearHistory = () => {
+            if (confirm('هل أنت متأكد من مسح السجل بالكامل؟')) {
+                state.history = [];
+                localStorage.removeItem('textguard_history');
+                renderHistory();
+            }
+        };
+
+        // Init
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+                renderMissions();
+                updateStats();
+            }, 800);
+        });
     </script>
-    <script type="module" src="./index.tsx"></script>
 </body>
 </html>
